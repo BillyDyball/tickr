@@ -3,6 +3,7 @@ using TickrApi.Models;
 
 // .Net and Redis starting point
 // https://redis.io/learn/develop/dotnet
+// https://github.com/redis-developer/hitc-dotnet-redisearch-demo/tree/main
 
 var builder = WebApplication.CreateBuilder(args);
 
