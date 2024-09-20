@@ -1,42 +1,94 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { TodoCard } from "@/components/todo-card";
+import { TodoItem, todoService } from "@/services";
+import { Checkbox } from "@/components/checkbox";
+import { TextInput } from "@/components/text-input";
+import { SubmitButton } from "@/components/submit-button";
+import { useTodos } from "@/hooks";
+import { cloneDeep } from "@/utils";
+
+const defaultTodoForm = { name: "", isComplete: false };
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [todoForm, setTodoForm] = useState<{
+    name: string;
+    isComplete: boolean;
+  }>(cloneDeep(defaultTodoForm));
+
+  const { data: todos, isLoading, refetch } = useTodos();
+
+  const handleToggleComplete = async (id: number, todo: TodoItem) => {
+    await todoService.updateTodo(id, { ...todo, isComplete: !todo.isComplete });
+    await refetch();
+  };
+
+  const handleDelete = async (id: number) => {
+    await todoService.deleteTodo(id);
+    await refetch();
+  };
+
+  const handleSubmit = async () => {
+    const { name, isComplete } = todoForm;
+    if (!name) {
+      return;
+    }
+
+    await todoService.addTodo({ id: -1, name, isComplete });
+    setTodoForm(cloneDeep(todoForm));
+    await refetch();
+  };
+
+  const getTodos = async () => {
+    const response = await todoService.getTodos();
+    console.log(response);
+    await refetch();
+  };
 
   useEffect(() => {
-    const fn = async () => {
-      const response = await fetch("https://localhost:7140/WeatherForecast");
-      console.log(response);
-    };
-    fn();
+    getTodos();
   }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="flex justify-center">
+      <div className="w-full md:w-1/2 lg:w-1/4 space-y-4">
+        <div className="space-y-4">
+          <TextInput
+            id="name-field"
+            label="name"
+            value={todoForm.name}
+            onChange={(e) =>
+              setTodoForm((prev) => ({ ...prev, name: e.target.value }))
+            }
+          />
+          <Checkbox
+            id="is-complete-checkbox"
+            label="Is Complete"
+            checked={todoForm.isComplete}
+            onChange={(checked) =>
+              setTodoForm((prev) => ({ ...prev, isComplete: checked }))
+            }
+          />
+          <SubmitButton onClick={handleSubmit}>
+            <span>Submit</span>
+          </SubmitButton>
+        </div>
+
+        {isLoading ? (
+          <div>loading</div>
+        ) : todos === undefined ? (
+          <div>Failed to load todos :(</div>
+        ) : (
+          todos.map((todo) => (
+            <TodoCard
+              key={todo.id}
+              item={todo}
+              onToggleComplete={(id) => handleToggleComplete(id, todo)}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   );
 }
 
