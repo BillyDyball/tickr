@@ -1,4 +1,4 @@
-namespace backend;
+namespace TickrApi;
 
 public class WeatherForecast
 {

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace backend.Controllers;
+namespace TickrApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
