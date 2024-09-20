@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using TickrApi.Models;
 
+// .Net and Redis starting point
+// https://redis.io/learn/develop/dotnet
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
