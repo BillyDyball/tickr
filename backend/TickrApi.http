@@ -1,6 +1,3 @@
 @TickrApi_HostAddress = http://localhost:5049
 
-GET {{TickrApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
 ###
