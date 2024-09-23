@@ -1,0 +1,115 @@
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using StackExchange.Redis;
+using TickrApi.Models;
+
+namespace ReferenceConsoleRedisApp
+{
+    public class Startup
+    {
+        private IConfiguration Configuration { get; }
+        private const string CONNECTION_STRING_CONFIG_VAR = "ConnectionString";
+        private const string DEFAULT_CONNECTION_STRING = "localhost,abortConnect=false,ssl=false,allowAdmin=false,password=";
+        public const string COOKIE_AUTH_SCHEME = "CookieAuthentication";
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            Console.WriteLine("Configure Services!");
+            // NReJSON.NReJSONSerializer.SerializerProxy = new NewtonsoftSeralizeProxy();
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    policy =>
+                    {
+                        policy.WithOrigins(
+                            "http://localhost:5173"
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                    }
+                );
+            });
+            services.AddControllers();
+            // services.AddSpaStaticFiles(configuration: options => { options.RootPath = "clientapp/dist"; });
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tickr API", Version = "v1" });
+            });
+
+            var connectionString = !string.IsNullOrEmpty(Configuration[CONNECTION_STRING_CONFIG_VAR]) ? Configuration[CONNECTION_STRING_CONFIG_VAR] : DEFAULT_CONNECTION_STRING;
+
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
+            services.AddTransient<RedisService>();
+
+            services.AddAuthentication(COOKIE_AUTH_SCHEME)
+                .AddCookie(COOKIE_AUTH_SCHEME, options =>
+                {
+                    options.Cookie.Name = "redis.Authcookie";
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+                    options.Events = new CookieAuthenticationEvents
+                    {
+                        OnRedirectToLogin = redirectContext =>
+                        {
+                            redirectContext.HttpContext.Response.StatusCode = 401;
+                            return Task.CompletedTask;
+                        }
+                    };
+                    options.ForwardDefaultSelector = ctx => COOKIE_AUTH_SCHEME;
+                });
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tickr-preview v1"));
+            }
+            // app.ApplicationServices.GetService<CartService>().CreateCartIndex();
+            // app.ApplicationServices.GetService<UserService>().CreateUserIndex();
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthorization();
+            app.UseAuthentication();
+
+            app.Map(new PathString(""), client =>
+            {
+                // var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "clientapp/dist");
+                // StaticFileOptions clientAppDist = new StaticFileOptions
+                // {
+                //     FileProvider = new PhysicalFileProvider(clientPath)
+                // };
+                // client.UseSpaStaticFiles(clientAppDist);
+                // client.UseSpa(spa => spa.Options.DefaultPageStaticFileOptions = clientAppDist);
+
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllerRoute(name: "default", pattern: "{controller}/{action=Index}/{id?}");
+                });
+            });
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+            // ThreadPool.QueueUserWorkItem(async (state) =>
+            // {
+            //     await SeedScript.SeedDatabase(
+            //         app.ApplicationServices.GetService<BookService>(),
+            //         app.ApplicationServices.GetService<UserService>(),
+            //         app.ApplicationServices.GetService<CartService>());
+            // });
+        }
+    }
+}

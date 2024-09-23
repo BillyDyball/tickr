@@ -1,51 +1,26 @@
-using Microsoft.EntityFrameworkCore;
-using TickrApi.Models;
-
-// .Net and Redis starting point
-// https://redis.io/learn/develop/dotnet
-// https://github.com/redis-developer/hitc-dotnet-redisearch-demo/tree/main
-
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddCors(options =>
+namespace ReferenceConsoleRedisApp
 {
-    options.AddDefaultPolicy(
-        policy =>
+    class Program
+    {
+        private static IConfigurationRoot Configuration { get; set; }
+
+        public static void Main(string[] args)
         {
-            policy.WithOrigins(
-                "http://localhost:5173"
-            )
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            InitializeConfiguration();
+            CreateHostBuilder(args).Build().Run();
         }
-    );
-});
 
-// Add services to the container.
+        private static void InitializeConfiguration()
+        {
+            var builder = new ConfigurationBuilder()
+                .AddUserSecrets<Program>();
+            Configuration = builder.Build();
+        }
 
-builder.Services.AddControllers();
-builder.Services.AddDbContext<TodoContext>(opt =>
-    opt.UseInMemoryDatabase("TickrList"));
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+        }
+    }
 }
-
-app.UseCors();
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
