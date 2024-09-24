@@ -1,4 +1,4 @@
-namespace ReferenceConsoleRedisApp
+namespace TickrApi.Program
 {
     class Program
     {

@@ -1,9 +1,10 @@
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using StackExchange.Redis;
 using TickrApi.Models;
+using TickrApi.Hubs;
+using Microsoft.EntityFrameworkCore;
 
-namespace ReferenceConsoleRedisApp
+namespace TickrApi.Program
 {
     public class Startup
     {
@@ -24,12 +25,11 @@ namespace ReferenceConsoleRedisApp
             // NReJSON.NReJSONSerializer.SerializerProxy = new NewtonsoftSeralizeProxy();
             services.AddCors(options =>
             {
+                var origins = Configuration.GetSection("Origins").Get<string[]>();
                 options.AddDefaultPolicy(
                     policy =>
                     {
-                        policy.WithOrigins(
-                            "http://localhost:5173"
-                        )
+                        policy.WithOrigins(origins)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
@@ -37,33 +37,39 @@ namespace ReferenceConsoleRedisApp
                 );
             });
             services.AddControllers();
-            // services.AddSpaStaticFiles(configuration: options => { options.RootPath = "clientapp/dist"; });
+            services.AddDbContext<TodoContext>(opt =>
+                opt.UseInMemoryDatabase("TickrList"));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tickr API", Version = "v1" });
             });
+            services.AddSignalR();
 
-            var connectionString = !string.IsNullOrEmpty(Configuration[CONNECTION_STRING_CONFIG_VAR]) ? Configuration[CONNECTION_STRING_CONFIG_VAR] : DEFAULT_CONNECTION_STRING;
+            var redisConnectionString =
+                !string.IsNullOrEmpty(Configuration[CONNECTION_STRING_CONFIG_VAR]) ?
+                    Configuration[CONNECTION_STRING_CONFIG_VAR] :
+                    DEFAULT_CONNECTION_STRING;
 
-            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddTransient<RedisService>();
+            services.AddTransient<ChatHub>();
 
-            services.AddAuthentication(COOKIE_AUTH_SCHEME)
-                .AddCookie(COOKIE_AUTH_SCHEME, options =>
-                {
-                    options.Cookie.Name = "redis.Authcookie";
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
-                    options.Events = new CookieAuthenticationEvents
-                    {
-                        OnRedirectToLogin = redirectContext =>
-                        {
-                            redirectContext.HttpContext.Response.StatusCode = 401;
-                            return Task.CompletedTask;
-                        }
-                    };
-                    options.ForwardDefaultSelector = ctx => COOKIE_AUTH_SCHEME;
-                });
+            // services.AddAuthentication(COOKIE_AUTH_SCHEME)
+            //     .AddCookie(COOKIE_AUTH_SCHEME, options =>
+            //     {
+            //         options.Cookie.Name = "redis.Authcookie";
+            //         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            //         options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+            //         options.Events = new CookieAuthenticationEvents
+            //         {
+            //             OnRedirectToLogin = redirectContext =>
+            //             {
+            //                 redirectContext.HttpContext.Response.StatusCode = 401;
+            //                 return Task.CompletedTask;
+            //             }
+            //         };
+            //         options.ForwardDefaultSelector = ctx => COOKIE_AUTH_SCHEME;
+            //     });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -75,8 +81,7 @@ namespace ReferenceConsoleRedisApp
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tickr-preview v1"));
             }
-            // app.ApplicationServices.GetService<CartService>().CreateCartIndex();
-            // app.ApplicationServices.GetService<UserService>().CreateUserIndex();
+            app.UseCors();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthorization();
@@ -84,16 +89,9 @@ namespace ReferenceConsoleRedisApp
 
             app.Map(new PathString(""), client =>
             {
-                // var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "clientapp/dist");
-                // StaticFileOptions clientAppDist = new StaticFileOptions
-                // {
-                //     FileProvider = new PhysicalFileProvider(clientPath)
-                // };
-                // client.UseSpaStaticFiles(clientAppDist);
-                // client.UseSpa(spa => spa.Options.DefaultPageStaticFileOptions = clientAppDist);
-
                 app.UseEndpoints(endpoints =>
                 {
+                    endpoints.MapHub<ChatHub>("/chatHub");
                     endpoints.MapControllerRoute(name: "default", pattern: "{controller}/{action=Index}/{id?}");
                 });
             });

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { TodoCard } from "@/components/todo-card";
-import { TodoItem, todoService } from "@/services";
+import { signalRService, TodoItem, todoService } from "@/services";
 import { Checkbox } from "@/components/checkbox";
 import { TextInput } from "@/components/text-input";
 import { SubmitButton } from "@/components/submit-button";
 import { useTodos } from "@/hooks";
 import { cloneDeep } from "@/utils";
+import { Button } from "./components/ui/button";
 
 const defaultTodoForm = { name: "", isComplete: false };
 
@@ -44,6 +45,10 @@ function App() {
     await refetch();
   };
 
+  const sendUser = () => {
+    signalRService.sendMessage("Cool man Billy", "wow cool dude 123");
+  };
+
   useEffect(() => {
     getTodos();
   }, []);
@@ -71,6 +76,8 @@ function App() {
           <SubmitButton onClick={handleSubmit}>
             <span>Submit</span>
           </SubmitButton>
+
+          <Button onClick={sendUser}>sendUser</Button>
         </div>
 
         {isLoading ? (
