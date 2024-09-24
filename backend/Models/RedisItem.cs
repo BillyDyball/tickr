@@ -1,4 +1,5 @@
 namespace TickrApi.Models;
+
 public class RedisItem
 {
     public long Id { get; set; }
