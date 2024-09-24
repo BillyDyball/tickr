@@ -3,6 +3,7 @@ using StackExchange.Redis;
 using TickrApi.Models;
 using TickrApi.Hubs;
 using Microsoft.EntityFrameworkCore;
+using Tickr.Controllers;
 
 namespace TickrApi.Program
 {
@@ -37,20 +38,24 @@ namespace TickrApi.Program
                 );
             });
             services.AddControllers();
-            services.AddDbContext<TodoContext>(opt =>
-                opt.UseInMemoryDatabase("TickrList"));
+            // services.AddDbContext<TodoContext>(opt =>
+            //     opt.UseInMemoryDatabase("TickrList"));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tickr API", Version = "v1" });
             });
             services.AddSignalR();
 
-            var redisConnectionString =
-                !string.IsNullOrEmpty(Configuration[CONNECTION_STRING_CONFIG_VAR]) ?
-                    Configuration[CONNECTION_STRING_CONFIG_VAR] :
+            var configConnectionString = Configuration[CONNECTION_STRING_CONFIG_VAR];
+            string redisConnectionString =
+                !string.IsNullOrEmpty(configConnectionString) ?
+                    configConnectionString :
                     DEFAULT_CONNECTION_STRING;
 
             services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<IConfiguration>(Configuration);
+
+            services.AddTransient<CryptoController>();
             services.AddTransient<RedisService>();
             services.AddTransient<ChatHub>();
 
