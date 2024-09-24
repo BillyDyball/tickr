@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TickrApi.Models;
 
-namespace ReferenceConsoleRedisApp.Controllers
+namespace Tickr.Controllers
 {
     [Route("api/Redis")]
     [ApiController]
@@ -21,13 +21,5 @@ namespace ReferenceConsoleRedisApp.Controllers
             await _redisService.Ping();
             return NoContent();
         }
-
-        private static TodoItemDTO ItemToDTO(TodoItem todoItem) =>
-        new TodoItemDTO
-        {
-            Id = todoItem.Id,
-            Name = todoItem.Name,
-            IsComplete = todoItem.IsComplete
-        };
     }
 }
