@@ -2,6 +2,10 @@ using StackExchange.Redis;
 
 namespace TickrApi.Models;
 
+// https://stackoverflow.com/questions/36161600/using-redis-with-signalr
+// https://redis.io/learn/develop/dotnet/streams/stream-basics#start-redis
+// _db.StreamCreateConsumerGroupAsync
+
 public class RedisService
 {
     private readonly IDatabase _db;
