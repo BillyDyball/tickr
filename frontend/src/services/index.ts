@@ -1,14 +1,16 @@
 import axios from "axios";
 import { TodoService } from "./TodoService/todo.service";
-import { SignalRConnection } from "./SignalR/signalR.service";
+import { CryptoService } from "./CryptoService/crypto.service";
 
 const http = axios.create({
   baseURL: "https://localhost:7140",
 });
 
 const todoService = new TodoService(http);
-const signalRService = new SignalRConnection();
+const cryptoService = new CryptoService(http);
 
 export { todoService };
-export { signalRService };
 export * from "./TodoService";
+
+export { cryptoService };
+export * from "./CryptoService";

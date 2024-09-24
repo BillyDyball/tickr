@@ -1,35 +1,22 @@
-import * as SignalR from "@microsoft/signalr";
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 
-export class SignalRConnection {
-  private connection: SignalR.HubConnection;
+export abstract class SignalRConnection {
+  private connection: HubConnection;
 
-  constructor() {
-    this.connection = new SignalR.HubConnectionBuilder()
-      .withUrl("https://localhost:7140/chatHub")
+  constructor(connectionEndpoint: string) {
+    this.connection = new HubConnectionBuilder()
+      .withUrl(`https://localhost:7140/${connectionEndpoint}`)
       .build();
-    console.log(this.connection);
-    this.registerHandlers();
+    this.registerHandlers(this.connection);
     this.startConnection();
   }
+
+  abstract registerHandlers(connection: HubConnection): this;
 
   private startConnection(): this {
     this.connection
       .start()
       .catch((e) => console.error("Something went wrong", e));
-    return this;
-  }
-
-  private registerHandlers(): this {
-    this.connection.on("ReceiveMessage", (user: string, message: string) => {
-      console.log(`${user} says ${message}`);
-    });
-    return this;
-  }
-
-  sendMessage(user: string, message: string): this {
-    this.connection
-      .invoke("SendMessage", user, message)
-      .catch((e) => console.error(e));
     return this;
   }
 }
