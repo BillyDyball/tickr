@@ -1,6 +1,6 @@
 namespace Tickr.Models;
 
-public class Price
+public class CryptoPrice
 {
-    public int price { get; }
+    public double P { get; set; }
 }

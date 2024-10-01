@@ -2,7 +2,6 @@ using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using TickrApi.Models;
 using TickrApi.Hubs;
-using Microsoft.EntityFrameworkCore;
 using Tickr.Controllers;
 
 namespace TickrApi.Program
@@ -23,7 +22,6 @@ namespace TickrApi.Program
         public void ConfigureServices(IServiceCollection services)
         {
             Console.WriteLine("Configure Services!");
-            // NReJSON.NReJSONSerializer.SerializerProxy = new NewtonsoftSeralizeProxy();
             services.AddCors(options =>
             {
                 var origins = Configuration.GetSection("Origins").Get<string[]>();
@@ -38,8 +36,6 @@ namespace TickrApi.Program
                 );
             });
             services.AddControllers();
-            // services.AddDbContext<TodoContext>(opt =>
-            //     opt.UseInMemoryDatabase("TickrList"));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tickr API", Version = "v1" });
@@ -53,11 +49,11 @@ namespace TickrApi.Program
                     DEFAULT_CONNECTION_STRING;
 
             services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
-            services.AddSingleton<IConfiguration>(Configuration);
 
             services.AddTransient<CryptoController>();
             services.AddTransient<RedisService>();
             services.AddTransient<ChatHub>();
+            services.AddTransient<CryptoHub>();
 
             // services.AddAuthentication(COOKIE_AUTH_SCHEME)
             //     .AddCookie(COOKIE_AUTH_SCHEME, options =>

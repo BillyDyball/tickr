@@ -1,7 +1,7 @@
 namespace Tickr.Models;
 
-public class Ticker
+public class CryptoTicker
 {
-    public string publisher { get; }
-    public string ticker { get; }
+    public string Publisher { get; set; }
+    public string Ticker { get; set; }
 }
