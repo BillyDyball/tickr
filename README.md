@@ -13,3 +13,4 @@ Setup Backend
 To set up the backend a secret will have to be added to know where to locate the redis database and the password to authenticate with redis.
 
 Run this command and replace `<YOUR_CONNECTION_STRING_HERE>` with your own connection string `dotnet user-secrets set ConnectionString <YOUR_CONNECTION_STRING_HERE>`
+Run this command and replace `<YOUR_KEY_HERE>` with your own crypto key `dotnet user-secrets set CryptoKey <YOUR_KEY_HERE>`
