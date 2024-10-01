@@ -107,7 +107,7 @@ namespace TickrApi.Program
                 {
                     @event = "subscribe",
                     dataset = "gate",
-                    tickers = new[] { "BTC/USDT" },
+                    tickers = new[] { "BTC/USDT", "ETH/USDT", "DOGE/USDT" },
                     channel = "bars",
                     frequency = "1s",
                     aggregation = "1m"
