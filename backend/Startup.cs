@@ -3,19 +3,23 @@ using StackExchange.Redis;
 using TickrApi.Models;
 using TickrApi.Hubs;
 using Tickr.Controllers;
+using System.Net.WebSockets;
+
+using System.Text;
+using System.Text.Json;
 
 namespace TickrApi.Program
 {
     public class Startup
     {
-        private IConfiguration Configuration { get; }
+        private IConfiguration _configuration { get; }
         private const string CONNECTION_STRING_CONFIG_VAR = "ConnectionString";
         private const string DEFAULT_CONNECTION_STRING = "localhost,abortConnect=false,ssl=false,allowAdmin=false,password=";
         public const string COOKIE_AUTH_SCHEME = "CookieAuthentication";
 
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -24,7 +28,7 @@ namespace TickrApi.Program
             Console.WriteLine("Configure Services!");
             services.AddCors(options =>
             {
-                var origins = Configuration.GetSection("Origins").Get<string[]>();
+                var origins = _configuration.GetSection("Origins").Get<string[]>();
                 options.AddDefaultPolicy(
                     policy =>
                     {
@@ -42,7 +46,7 @@ namespace TickrApi.Program
             });
             services.AddSignalR();
 
-            var configConnectionString = Configuration[CONNECTION_STRING_CONFIG_VAR];
+            var configConnectionString = _configuration[CONNECTION_STRING_CONFIG_VAR];
             string redisConnectionString =
                 !string.IsNullOrEmpty(configConnectionString) ?
                     configConnectionString :
@@ -54,23 +58,6 @@ namespace TickrApi.Program
             services.AddTransient<RedisService>();
             services.AddTransient<ChatHub>();
             services.AddTransient<CryptoHub>();
-
-            // services.AddAuthentication(COOKIE_AUTH_SCHEME)
-            //     .AddCookie(COOKIE_AUTH_SCHEME, options =>
-            //     {
-            //         options.Cookie.Name = "redis.Authcookie";
-            //         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            //         options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
-            //         options.Events = new CookieAuthenticationEvents
-            //         {
-            //             OnRedirectToLogin = redirectContext =>
-            //             {
-            //                 redirectContext.HttpContext.Response.StatusCode = 401;
-            //                 return Task.CompletedTask;
-            //             }
-            //         };
-            //         options.ForwardDefaultSelector = ctx => COOKIE_AUTH_SCHEME;
-            //     });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -93,6 +80,7 @@ namespace TickrApi.Program
                 app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapHub<ChatHub>("/chatHub");
+                    endpoints.MapHub<CryptoHub>("/cryptoHub");
                     endpoints.MapControllerRoute(name: "default", pattern: "{controller}/{action=Index}/{id?}");
                 });
             });
@@ -102,13 +90,50 @@ namespace TickrApi.Program
                 endpoints.MapControllers();
             });
 
-            // ThreadPool.QueueUserWorkItem(async (state) =>
-            // {
-            //     await SeedScript.SeedDatabase(
-            //         app.ApplicationServices.GetService<BookService>(),
-            //         app.ApplicationServices.GetService<UserService>(),
-            //         app.ApplicationServices.GetService<CartService>());
-            // });
+            // Start the internal websocket client
+            ConnectToWebSocketAsync("wss://ws.finazon.io/v1?apikey=cbc7fe5001134caf8688ca700dbfe5c9uj");
+        }
+
+        public async Task ConnectToWebSocketAsync(string uri)
+        {
+            using (ClientWebSocket webSocket = new ClientWebSocket())
+            {
+                // Connect to the WebSocket
+                await webSocket.ConnectAsync(new Uri(uri), CancellationToken.None);
+                Console.WriteLine("WebSocket connection established.");
+
+                // Create the subscription object
+                var subscriptionMessage = new
+                {
+                    @event = "subscribe",
+                    dataset = "gate",
+                    tickers = new[] { "BTC/USDT" },
+                    channel = "bars",
+                    frequency = "1s",
+                    aggregation = "1m"
+                };
+
+                // Serialize the message into JSON
+                string jsonMessage = JsonSerializer.Serialize(subscriptionMessage);
+
+                // Send the subscription message
+                var messageBuffer = Encoding.UTF8.GetBytes(jsonMessage);
+                await webSocket.SendAsync(new ArraySegment<byte>(messageBuffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                Console.WriteLine("Subscription message sent.");
+
+                // Buffer to receive messages
+                byte[] buffer = new byte[1024 * 64];
+
+                // Continuously receive messages from the WebSocket
+                while (webSocket.State == WebSocketState.Open)
+                {
+                    WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    Console.WriteLine($"Received: {message}");
+
+                    // Here you would handle the received data, such as storing it in Redis
+                }
+            }
         }
     }
 }

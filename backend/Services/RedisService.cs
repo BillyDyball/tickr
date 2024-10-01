@@ -15,10 +15,14 @@ public class RedisService
         _db = multiplexer.GetDatabase();
     }
 
-    public Task Ping()
+    // Make this streams
+    public async Task PushData(string key, string value)
     {
-        Console.WriteLine("Redis Ping");
-        _db.Ping();
-        return Task.Delay(1000);
+        await _db.StringSetAsync(key, value);
+    }
+
+    public async Task<string> GetData(string key)
+    {
+        return await _db.StringGetAsync(key);
     }
 }

@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Tickr.Models;
@@ -38,7 +37,7 @@ namespace Tickr.Controllers
             query["page_size"] = pageSize.ToString();
             query["ticker"] = ticker;
 
-            var request = $"https://api.finazon.io/latest/gate/gate/tickers?{query.ToString()}";
+            var request = $"https://api.finazon.io/latest/gate/gate/tickers?{query}";
             HttpResponseMessage response = await client.GetAsync(request);
 
             if (response.IsSuccessStatusCode)
@@ -62,7 +61,7 @@ namespace Tickr.Controllers
             query["ticker"] = ticker;
             query["at"] = at.ToString();
 
-            var request = $"https://api.finazon.io/latest/gate/gate/price?{query.ToString()}";
+            var request = $"https://api.finazon.io/latest/gate/gate/price?{query}";
             HttpResponseMessage response = await client.GetAsync(request);
 
             if (response.IsSuccessStatusCode)
@@ -91,7 +90,7 @@ namespace Tickr.Controllers
             query["page"] = page.ToString();
             query["pageSize"] = pageSize.ToString();
 
-            var request = $"https://api.finazon.io/latest/gate/gate/time_series?{query.ToString()}";
+            var request = $"https://api.finazon.io/latest/gate/gate/time_series?{query}";
             HttpResponseMessage response = await client.GetAsync(request);
 
             if (response.IsSuccessStatusCode)
@@ -115,7 +114,7 @@ namespace Tickr.Controllers
             query["ticker"] = ticker;
             query["country"] = country;
 
-            var request = $"https://api.finazon.io/latest/gate/gate/ticker_snapshot?{query.ToString()}";
+            var request = $"https://api.finazon.io/latest/gate/gate/ticker_snapshot?{query}";
             HttpResponseMessage response = await client.GetAsync(request);
 
             if (response.IsSuccessStatusCode)
@@ -129,13 +128,5 @@ namespace Tickr.Controllers
                 throw new Exception(message);
             }
         }
-
-        // [HttpGet]
-        // [ProducesResponseType(StatusCodes.Status201Created)]
-        // public async Task<IActionResult> RedisPing()
-        // {
-        //     await _redisService.Ping();
-        //     return NoContent();
-        // }
     }
 }

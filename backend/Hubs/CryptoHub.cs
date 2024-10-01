@@ -1,12 +1,22 @@
+using System.Net.WebSockets;
 using Microsoft.AspNetCore.SignalR;
+using TickrApi.Models;
 
 namespace TickrApi.Hubs
 {
     public class CryptoHub : Hub
     {
-        public async Task SendMessage(string user, string message)
+        private readonly RedisService _redisService;
+
+        public CryptoHub(RedisService redisService)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            _redisService = redisService;
+        }
+
+        public async Task SendPriceUpdates(string symbol)
+        {
+            var price = await _redisService.GetData(symbol);
+            await Clients.All.SendAsync("ReceivePrice", symbol, price);
         }
     }
 }
