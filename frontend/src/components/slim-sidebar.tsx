@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusCircle, Bitcoin } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 import BTC from "@/assets/crypto/BTC.svg";
 import ETH from "@/assets/crypto/ETH.svg";

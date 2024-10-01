@@ -1,12 +1,9 @@
-import { useState } from "react";
-import { AnimatedCard } from "@/components/animated-card";
 import Layout from "@/components/layout";
 import { cn } from "@/lib/utils";
 import BTC from "@/assets/crypto/BTC.svg";
 import ETH from "@/assets/crypto/ETH.svg";
 import DOGE from "@/assets/crypto/DOGE.svg";
 import { Card, CardContent } from "@/components/ui/card";
-import { div } from "framer-motion/client";
 
 const cards = [
   {
