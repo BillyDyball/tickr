@@ -13,6 +13,7 @@ namespace TickrApi.Program
     public class Startup
     {
         private IConfiguration _configuration { get; }
+        private const string CYRPTO_KEY_CONFIG_VAR = "CryptoKey";
         private const string CONNECTION_STRING_CONFIG_VAR = "ConnectionString";
         private const string DEFAULT_CONNECTION_STRING = "localhost,abortConnect=false,ssl=false,allowAdmin=false,password=";
         public const string COOKIE_AUTH_SCHEME = "CookieAuthentication";
@@ -90,8 +91,9 @@ namespace TickrApi.Program
                 endpoints.MapControllers();
             });
 
+            var cryptoKey = _configuration[CYRPTO_KEY_CONFIG_VAR];
             // Start the internal websocket client
-            ConnectToWebSocketAsync("wss://ws.finazon.io/v1?apikey=cbc7fe5001134caf8688ca700dbfe5c9uj");
+            ConnectToWebSocketAsync($"wss://ws.finazon.io/v1?apikey={cryptoKey}");
         }
 
         public async Task ConnectToWebSocketAsync(string uri)
