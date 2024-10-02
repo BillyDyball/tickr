@@ -16,13 +16,15 @@ export class CryptoService extends SignalRConnection {
   private readonly endpoint = "api/Crypto";
 
   constructor(http: AxiosInstance) {
-    super("api/Crypto/websocket");
+    super("hubs/crypto", () => {
+      this.connection.invoke("SendPriceUpdates", "BTC/USDT");
+    });
     this.http = http;
   }
 
   registerHandlers(connection: HubConnection): this {
-    connection.on("ReceiveMessage", (user: string, message: string) => {
-      console.log(`${user} says ${message}`);
+    connection.on("BTC/USDT", (message: string) => {
+      console.log(`Recieved: ${message}`);
     });
     return this;
   }
@@ -87,6 +89,15 @@ export class CryptoService extends SignalRConnection {
       return response.data;
     } catch (e) {
       throw handleServiceError(e, "getTickerSnapshot");
+    }
+  };
+
+  ping = async (): Promise<void> => {
+    try {
+      const response = await this.http.get<string>(`${this.endpoint}/ping`);
+      console.log(response);
+    } catch (e) {
+      throw handleServiceError(e, "ping");
     }
   };
 }

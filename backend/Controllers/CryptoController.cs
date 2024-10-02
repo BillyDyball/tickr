@@ -27,7 +27,7 @@ namespace Tickr.Controllers
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("apikey", key);
         }
 
-        [Route("/tickers")]
+        [Route("tickers")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ApiResponse<IEnumerable<CryptoTicker>>> GetTickers(int? page, int? pageSize, string? ticker)
@@ -52,7 +52,7 @@ namespace Tickr.Controllers
             }
         }
 
-        [Route("/price")]
+        [Route("price")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<CryptoPrice> GetPrice(string ticker, int? at)
@@ -76,7 +76,7 @@ namespace Tickr.Controllers
             }
         }
 
-        [Route("/timeSeries")]
+        [Route("timeSeries")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ApiDataResponse<IEnumerable<CryptoTimeSeries>>> GetTimeSeries(string ticker, string interval, string? order, int? startAt, int? endAt, int? page, int? pageSize)
@@ -105,7 +105,7 @@ namespace Tickr.Controllers
             }
         }
 
-        [Route("/tickerSnapshot")]
+        [Route("tickerSnapshot")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<CryptoTickerSnapshot> GetTickerSnapshot(string ticker, string? country)
@@ -127,6 +127,15 @@ namespace Tickr.Controllers
                 string message = await response.Content.ReadAsStringAsync();
                 throw new Exception(message);
             }
+        }
+
+        [Route("ping")]
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<string> Ping()
+        {
+            Console.WriteLine("Pong");
+            return "Pong";
         }
     }
 }

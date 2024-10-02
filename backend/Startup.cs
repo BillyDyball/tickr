@@ -30,13 +30,14 @@ namespace TickrApi.Program
             services.AddCors(options =>
             {
                 var origins = _configuration.GetSection("Origins").Get<string[]>();
-                options.AddDefaultPolicy(
+                options.AddPolicy("CorsPolicy",
                     policy =>
                     {
                         policy.WithOrigins(origins)
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .SetIsOriginAllowed((x) => true)
+                            .AllowCredentials();
                     }
                 );
             });
@@ -57,8 +58,15 @@ namespace TickrApi.Program
 
             services.AddTransient<CryptoController>();
             services.AddTransient<RedisService>();
-            services.AddTransient<ChatHub>();
             services.AddTransient<CryptoHub>();
+
+            var cryptoKey = _configuration[CYRPTO_KEY_CONFIG_VAR];
+            // Start the internal websocket client
+            ConnectToFinazonAsync(
+                $"wss://ws.finazon.io/v1?apikey={cryptoKey}",
+                ["BTC/USDT", "ETH/USDT"],
+                new RedisService(ConnectionMultiplexer.Connect(redisConnectionString))
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,7 +78,7 @@ namespace TickrApi.Program
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tickr-preview v1"));
             }
-            app.UseCors();
+            app.UseCors("CorsPolicy");
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthorization();
@@ -80,8 +88,7 @@ namespace TickrApi.Program
             {
                 app.UseEndpoints(endpoints =>
                 {
-                    endpoints.MapHub<ChatHub>("/chatHub");
-                    endpoints.MapHub<CryptoHub>("/cryptoHub");
+                    endpoints.MapHub<CryptoHub>("/hubs/crypto");
                     endpoints.MapControllerRoute(name: "default", pattern: "{controller}/{action=Index}/{id?}");
                 });
             });
@@ -90,13 +97,9 @@ namespace TickrApi.Program
             {
                 endpoints.MapControllers();
             });
-
-            var cryptoKey = _configuration[CYRPTO_KEY_CONFIG_VAR];
-            // Start the internal websocket client
-            ConnectToWebSocketAsync($"wss://ws.finazon.io/v1?apikey={cryptoKey}");
         }
 
-        public async Task ConnectToWebSocketAsync(string uri)
+        public async Task ConnectToFinazonAsync(string uri, string[] tickers, RedisService redisService)
         {
             using (ClientWebSocket webSocket = new ClientWebSocket())
             {
@@ -109,7 +112,7 @@ namespace TickrApi.Program
                 {
                     @event = "subscribe",
                     dataset = "gate",
-                    tickers = new[] { "BTC/USDT", "ETH/USDT", "DOGE/USDT" },
+                    tickers,
                     channel = "bars",
                     frequency = "1s",
                     aggregation = "1m"
@@ -133,7 +136,11 @@ namespace TickrApi.Program
                     string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     Console.WriteLine($"Received: {message}");
 
-                    // Here you would handle the received data, such as storing it in Redis
+                    if (message.Contains("status")) continue;
+
+                    // Convert message to json object of type CryptoMessage
+                    var cryptoMessage = JsonSerializer.Deserialize<CryptoMessage>(message);
+                    await redisService.PushCryptoMessage(cryptoMessage);
                 }
             }
         }

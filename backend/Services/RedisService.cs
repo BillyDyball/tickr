@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StackExchange.Redis;
 
 namespace TickrApi.Models;
@@ -9,20 +10,33 @@ namespace TickrApi.Models;
 public class RedisService
 {
     private readonly IDatabase _db;
+    private readonly ISubscriber _subscriber;
 
     public RedisService(IConnectionMultiplexer multiplexer)
     {
         _db = multiplexer.GetDatabase();
+        _subscriber = multiplexer.GetSubscriber();
     }
 
     // Make this streams
-    public async Task PushData(string key, string value)
+    public async Task PushCryptoMessage(CryptoMessage value)
     {
-        await _db.StringSetAsync(key, value);
+        // Remove the old key and add a new one
+        _db.KeyDelete(value.S);
+        _db.StreamAdd(value.S, new NameValueEntry[] {
+            new NameValueEntry("data", JsonSerializer.Serialize(value)),
+        }, null, null, false);
     }
 
-    public async Task<string> GetData(string key)
+    public CryptoMessage GetCryptoMessage(string key)
     {
-        return await _db.StringGetAsync(key);
+        StreamEntry[] stream = _db.StreamRead(key, 0, 1);
+
+        if (stream.Length > 0)
+        {
+            var message = JsonSerializer.Deserialize<CryptoMessage>(stream[0].Values[0].Value);
+            return message;
+        }
+        return null;
     }
 }
