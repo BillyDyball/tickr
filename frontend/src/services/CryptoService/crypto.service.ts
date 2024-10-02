@@ -1,6 +1,6 @@
 import { handleServiceError } from "@/utils";
 import {
-  interval,
+  Interval,
   Ticker,
   TickerPrice,
   TickerSnapshot,
@@ -59,18 +59,19 @@ export class CryptoService extends SignalRConnection {
 
   getTimeSeries = async (params: {
     ticker: string;
-    interval: interval;
+    interval: Interval;
     order?: Order;
     startAt?: number;
     endAt?: number;
     page?: number;
-    pageSize: number;
-  }): Promise<TimeSeries> => {
+    pageSize?: number;
+  }): Promise<TimeSeries[]> => {
     try {
-      const response = await this.http.get<TimeSeries>(
+      const response = await this.http.get<TimeSeries[]>(
         `${this.endpoint}/timeSeries`,
         { params }
       );
+      console.log("response", response);
       return response.data;
     } catch (e) {
       throw handleServiceError(e, "getTimeSeries");

@@ -1,4 +1,4 @@
-export type interval =
+export type Interval =
   | "1m"
   | "2m"
   | "3m"
