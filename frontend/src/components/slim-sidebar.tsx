@@ -13,7 +13,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import TickrLogo from "@/assets/tickr-logo.svg";
 import { Link } from "react-router-dom";
 
 export function SlimSidebar() {
@@ -27,13 +26,8 @@ export function SlimSidebar() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-screen w-20 bg-gray-900 text-white pt-4">
-        <div className="p-3">
-          <Link to={"/"} className="flex justify-center">
-            <img src={TickrLogo} className={cn("h-6")} />
-          </Link>
-        </div>
-        <nav className="flex-1 py-4">
+      <div className="flex flex-col w-20 bg-transparent text-white pt-4 border-r border-r-slate-700">
+        <nav className="flex-1">
           <ul className="flex flex-col space-y-2 justify-center items-center">
             {navItems.map((item, index) => (
               <li key={index} className={cn("h-12 w-12")}>
