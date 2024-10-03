@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ButtonGroup } from "./button-group";
 
 export const TIMEFRAMES = {
+  LIVE: "LIVE",
   DAY: "D",
   WEEK: "W",
   MONTH: "M",
@@ -33,6 +34,7 @@ export function TimeframeButtonGroup({ onChange }: TimeframeButtonGroupProps) {
           children: value,
           onClick: () => handleChange(value),
           active: selected === value,
+          className: key === TIMEFRAMES.LIVE ? "min-w-fit" : "",
         };
       })}
     />
