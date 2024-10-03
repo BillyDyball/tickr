@@ -92,7 +92,7 @@ export function Home() {
         startAt = Math.floor(endAt - 60 * 60 * 24 * 30);
         break;
       case "Y":
-        interval = "1m";
+        interval = "1mo";
         // 12 months
         startAt = Math.floor(endAt - 60 * 60 * 24 * 365);
         break;
