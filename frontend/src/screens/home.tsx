@@ -30,6 +30,7 @@ import {
 import { BulletPoints } from "@/components/bullet-points";
 import { TickerChart } from "@/components/ticker-chart";
 import { formatPrice } from "@/utils";
+import Gradient from "@/assets/bg-gradient.png";
 
 export function Home() {
   // const { data, isLoading } = useTickerSnapshot("BTC/USDT", {
@@ -344,8 +345,12 @@ export function Home() {
               </CardContent>
             </Card>
           </div>
-          <Card>
-            <CardContent className="flex flex-col gap-4 p-6">
+          <Card
+            style={{
+              backgroundImage: `url(${Gradient})`,
+            }}
+          >
+            <CardContent className="flex flex-col gap-4 p-6" style={{}}>
               <p className="text-2xl">Premium Plan</p>
               <p className="w-2/3">
                 Upgrade your plan to Premium and get unlimited access
