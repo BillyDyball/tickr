@@ -14,3 +14,8 @@ export const formatPrice = (price: number): string => {
     maximumFractionDigits: 2,
   });
 };
+
+export const percentageDifference = (a: number, b: number): number => {
+  if (a === 0 && b === 0) return 0;
+  return ((b - a) / Math.abs(a)) * 100;
+};
