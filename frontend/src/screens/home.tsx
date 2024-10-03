@@ -1,23 +1,25 @@
 import Layout from "@/components/layout";
-import { useTickerSnapshot } from "@/hooks/useCryptoSnapshot";
 import { cryptoService, Interval, TimeSeries } from "@/services";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ChartSelect } from "@/components/chart-select";
-import { ButtonGroup } from "@/components/button-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/checkbox";
 import { Button } from "@/components/ui/button";
 import { CircleIcon } from "@/components/circle-icon";
 import {
+  ArrowUpDownIcon,
   BitcoinIcon,
+  ChevronDown,
   ChevronRightIcon,
+  ChevronUp,
+  DollarSign,
   EthernetPortIcon,
+  MoreHorizontal,
   TerminalIcon,
 } from "lucide-react";
 
-import { ChartProps, Line } from "react-chartjs-2";
 import { GradientCircle } from "@/components/GradientCircle";
 import "chart.js/auto";
 import {
@@ -25,69 +27,90 @@ import {
   TimeframeButtonGroup,
   TIMEFRAMES,
 } from "@/components/timeframe-button-group";
-import { it } from "node:test";
-
-// Last 7 months
-const labels = ["January", "February", "March", "April", "May", "June", "July"];
-const data: ChartProps<"line">["data"] = {
-  labels: labels,
-  datasets: [
-    {
-      data: [28, 48, 40, 19, 86, 27, 90],
-      borderColor: "rgb(56, 189, 248)",
-      backgroundColor(ctx) {
-        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, "rgba(37, 148, 198,1)");
-        gradient.addColorStop(0.5, "rgba(37, 148, 198,0)");
-
-        return gradient;
-      },
-      pointRadius: 0,
-      borderJoinStyle: "round",
-      tension: 0.4,
-      fill: true,
-    },
-  ],
-};
+import { BulletPoints } from "@/components/bullet-points";
+import { TickerChart } from "@/components/ticker-chart";
+import { formatPrice } from "@/utils";
 
 export function Home() {
   // const { data, isLoading } = useTickerSnapshot("BTC/USDT", {
   //   refetchInterval: 30000,
   // });
   const [timeSeries, setTimeSeries] = useState<TimeSeries[]>([]);
+  const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.DAY);
 
-  const fetchPing = async () => {
-    await cryptoService.ping();
+  const currentPrice = useMemo(() => {
+    if (timeSeries.length > 0) {
+      return formatPrice(timeSeries[timeSeries.length - 1].c);
+    }
+    return 0;
+  }, [timeSeries]);
+
+  const onLiveMode = (message: string) => {
+    console.log("message", message);
+    const series = JSON.parse(message) as TimeSeries | null;
+    if (series === null) return;
+
+    setTimeSeries((prev) => {
+      if (prev.length > 0) {
+        const last = prev[prev.length - 1];
+        if (last.t === series.t) {
+          // Replace the last element with the new series
+          return [...prev.slice(0, prev.length - 1), series];
+        }
+      }
+      // Remove the first element and add the new series
+      return [...prev.slice(1), series];
+    });
   };
 
   const handleTimeframeChange = async (timeframe: Timeframe) => {
     let interval: Interval | null = null;
     let startAt: number | null = null;
     // Unix timestamp in seconds
-    const endAt = Math.floor(Date.now()) / 1000;
+    const endAt = Math.floor(Date.now() / 1000);
 
     switch (timeframe) {
+      case "LIVE":
+        interval = "1m";
+        // 30 minutes
+        startAt = Math.floor(endAt - 60 * 30);
+        break;
       case "D":
         interval = "1h";
-        startAt = endAt - 60 * 60 * 24;
+        // 24 hours
+        startAt = Math.floor(endAt - 60 * 60 * 24);
         break;
       case "W":
         interval = "1d";
-        startAt = Date.now() - 60 * 60 * 24 * 7;
+        // 7 days
+        startAt = Math.floor(endAt - 60 * 60 * 24 * 7);
         break;
       case "M":
         interval = "1d";
-        startAt = Date.now() - 60 * 60 * 24 * 30;
+        // 30 days
+        startAt = Math.floor(endAt - 60 * 60 * 24 * 30);
         break;
       case "Y":
         interval = "1m";
-        startAt = Date.now() - 60 * 60 * 24 * 365;
+        // 12 months
+        startAt = Math.floor(endAt - 60 * 60 * 24 * 365);
         break;
     }
 
     if (interval === null || startAt === null) {
       console.error("Invalid timeframe");
       return;
+    }
+
+    // Start the connection for live mode
+    if (timeframe === TIMEFRAMES.LIVE) {
+      cryptoService.startConnection(() => {
+        cryptoService.connection.invoke("SendPriceUpdates", "BTC/USDT");
+      });
+      cryptoService.connection.on("BTC/USDT", onLiveMode);
+    } else {
+      cryptoService.connection.off("BTC/USDT", onLiveMode);
+      cryptoService.stopConnection();
     }
 
     const timeSeries = await cryptoService.getTimeSeries({
@@ -97,6 +120,7 @@ export function Home() {
       endAt,
     });
     setTimeSeries(timeSeries);
+    setTimeframe(timeframe);
   };
 
   useEffect(() => {
@@ -107,21 +131,22 @@ export function Home() {
     <Layout>
       <div className="flex flex-wrap relative h-full overflow-hidden text-white">
         <GradientCircle className="bg-sky-700 opacity-15 right-20 -bottom-20 h-1/2 w-1/2" />
-        <div className="w-full md:w-2/3 lg:w-3/5 border-r-none border-r-slate-700 md:border-r flex flex-col overflow-scroll gap-4 p-4">
+        <div className="h-full w-full md:w-2/3 lg:10/12 border-r-none border-r-slate-700 md:border-r flex flex-col overflow-scroll gap-4 p-8">
           <div className="flex justify-between">
             <h1 className="text-4xl">BTC/USD</h1>
             <ChartSelect />
           </div>
           <div className="flex justify-between">
             <div>
-              <h1 className="text-2xl">$16,430.00</h1>
+              <h1 className="text-2xl">{currentPrice}</h1>
             </div>
             <TimeframeButtonGroup onChange={handleTimeframeChange} />
           </div>
           <div className="flex-1">
-            <Line
-              data={data}
-              options={{ plugins: { legend: { display: false } } }}
+            <TickerChart
+              series={timeSeries}
+              type="line"
+              timeframe={timeframe}
             />
           </div>
           <div className="flex gap-4">
@@ -238,7 +263,103 @@ export function Home() {
             </div>
           </div>
         </div>
-        <div className="w-full md:w-1/3 lg:w-2/5"></div>
+        <div className="h-full w-full md:w-1/3 lg:2/12 flex flex-col overflow-scroll gap-4 p-8">
+          <Card>
+            <CardContent className="flex flex-col gap-4 p-6">
+              <div className="flex justify-between">
+                <p>Total balance</p>
+                <CircleIcon
+                  icon={MoreHorizontal}
+                  size={14}
+                  className="p-1"
+                  color="#ffffff"
+                />
+              </div>
+              <div className="flex justify-between">
+                <p className="text-2xl">$78,820.00</p>
+                <div className="flex items-center gap-1 text-green-400">
+                  <ChevronUp size={16} />
+                  <p>$931.12</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <p>Exchange</p>
+                <p>1 BTC = $30,834.00</p>
+              </div>
+              <div className="relative">
+                <CircleIcon
+                  icon={ArrowUpDownIcon}
+                  color="#000000"
+                  size={20}
+                  className="!bg-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-3"
+                />
+                <div className="flex justify-between rounded-t-2xl bg-slate-800 p-4">
+                  <p>You sell</p>
+                  <div className="flex items-center">
+                    <BitcoinIcon className="text-[#e38e29]" />
+                    <p>BTC</p>
+                    <CircleIcon
+                      size={14}
+                      icon={ChevronDown}
+                      color="#ffffff"
+                      className="p-0.5 ml-4"
+                    />
+                  </div>
+                </div>
+                <Separator className="bg-slate-900" />
+                <div className="flex justify-between rounded-b-2xl bg-slate-800 p-4">
+                  <p>You Get</p>
+                  <div className="flex items-center">
+                    <DollarSign className="text-[#65ddbc]" />
+                    <p>USDT</p>
+                    <CircleIcon
+                      size={14}
+                      icon={ChevronDown}
+                      color="#ffffff"
+                      className="p-0.5 ml-4"
+                    />
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant={"default"}
+                size={"lg"}
+                className="mt-4 bg-gradient-to-r from-cyan-500 to-blue-500"
+              >
+                Exchange
+              </Button>
+            </CardContent>
+          </Card>
+          <div className="flex flex-col gap-2">
+            <p className="text-2xl">Ai Tips</p>
+            <Card>
+              <CardContent className="flex flex-col gap-4 p-6">
+                <BulletPoints
+                  points={[
+                    "Follow News and market analysis to understand what events may affect asset prices",
+                    "Create a trading plan that includes goals",
+                  ]}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardContent className="flex flex-col gap-4 p-6">
+              <p className="text-2xl">Premium Plan</p>
+              <p className="w-2/3">
+                Upgrade your plan to Premium and get unlimited access
+              </p>
+              <Button
+                variant={"default"}
+                size={"lg"}
+                className="bg-white text-black"
+              >
+                Upgrade Now
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

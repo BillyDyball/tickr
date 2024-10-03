@@ -9,24 +9,14 @@ import {
 import { AxiosInstance } from "axios";
 import { Order } from "@/types";
 import { SignalRConnection } from "../SignalR/signalR.service";
-import { HubConnection } from "@microsoft/signalr";
 
 export class CryptoService extends SignalRConnection {
   private http: AxiosInstance;
   private readonly endpoint = "api/Crypto";
 
   constructor(http: AxiosInstance) {
-    super("hubs/crypto", () => {
-      this.connection.invoke("SendPriceUpdates", "BTC/USDT");
-    });
+    super("hubs/crypto");
     this.http = http;
-  }
-
-  registerHandlers(connection: HubConnection): this {
-    connection.on("BTC/USDT", (message: string) => {
-      console.log(`Recieved: ${message}`);
-    });
-    return this;
   }
 
   getTickers = async (params?: {
@@ -67,12 +57,12 @@ export class CryptoService extends SignalRConnection {
     pageSize?: number;
   }): Promise<TimeSeries[]> => {
     try {
-      const response = await this.http.get<TimeSeries[]>(
+      const response = await this.http.get<{ data: TimeSeries[] }>(
         `${this.endpoint}/timeSeries`,
         { params }
       );
       console.log("response", response);
-      return response.data;
+      return response.data.data;
     } catch (e) {
       throw handleServiceError(e, "getTimeSeries");
     }
