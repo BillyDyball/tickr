@@ -132,7 +132,7 @@ export function Home() {
     <Layout>
       <div className="flex flex-wrap relative h-full overflow-hidden text-white">
         <GradientCircle className="bg-sky-700 opacity-15 right-20 -bottom-20 h-1/2 w-1/2" />
-        <div className="h-full w-full md:w-2/3 lg:10/12 border-r-none border-r-slate-700 md:border-r flex flex-col overflow-scroll gap-4 p-8">
+        <div className="h-full w-full md:w-2/3 lg:10/12 border-r-none border-r-slate-700 md:border-r flex flex-col overflow-y-auto gap-4 p-8">
           <div className="flex justify-between">
             <h1 className="text-4xl">BTC/USD</h1>
             <ChartSelect />
@@ -264,7 +264,7 @@ export function Home() {
             </div>
           </div>
         </div>
-        <div className="h-full w-full md:w-1/3 lg:2/12 flex flex-col overflow-scroll gap-4 p-8">
+        <div className="h-full w-full md:w-1/3 lg:2/12 flex flex-col overflow-y-auto gap-4 p-8">
           <Card>
             <CardContent className="flex flex-col gap-4 p-6">
               <div className="flex justify-between">

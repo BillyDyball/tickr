@@ -3,6 +3,28 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --radius: 0.5rem
+    --radius: 0.5rem;
+  }
+}
+
+* {
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 }
