@@ -25,7 +25,8 @@ export function TickerChart({ series, timeframe, type }: TickerChartProps) {
             if (index % 3 === 0) return moment(unix).format("h A");
             return "";
           case TIMEFRAMES.WEEK:
-            return moment(unix).format("ddd");
+            if (index % 7 === 0) return moment(unix).format("MMM Do");
+            return "";
           case TIMEFRAMES.MONTH:
             if (index % 7 === 0) return moment(unix).format("Do");
             return "";

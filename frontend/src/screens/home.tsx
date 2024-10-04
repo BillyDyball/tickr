@@ -120,7 +120,7 @@ export function Home() {
       startAt,
       endAt,
     });
-    setTimeSeries(timeSeries);
+    setTimeSeries(timeSeries.reverse());
     setTimeframe(timeframe);
   };
 
