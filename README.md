@@ -81,7 +81,7 @@ Tickr is a cryptocurrency tracking application that provides real-time and histo
 - **Launch API**:
 
   ```sh
-  dotnet run --launch-profile https
+  dotnet run
   ```
 
 - **Launch API with HTTPS**:
